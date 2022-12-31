@@ -3,12 +3,14 @@ import { PrismaService } from 'src/database/prisma/prismaService/prisma.service'
 import { SignInDto, SignUpDto } from './dto';
 import * as argon from 'argon2';
 import { JwtService } from '@nestjs/jwt/dist';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwt: JwtService,
+    private readonly config: ConfigService,
   ) {}
 
   async signup(body: SignUpDto) {
@@ -23,7 +25,6 @@ export class AuthService {
           hash,
         },
       });
-      console.log(user);
       Reflect.deleteProperty(user, 'hash');
       return user;
     } catch (error) {
@@ -54,7 +55,23 @@ export class AuthService {
     if (!correctPass) {
       throw new HttpException('Password Incorrect', HttpStatus.UNAUTHORIZED);
     }
-    Reflect.deleteProperty(user, 'hash');
-    return user;
+
+    return await this.signToken(user.id, user.email);
+  }
+
+  private async signToken(userId: string, email: string) {
+    const payload = {
+      sub: userId,
+      email,
+    };
+
+    const secret = this.config.get('JWT_SECRET');
+    const token = await this.jwt.signAsync(payload, {
+      expiresIn: '15m',
+      secret,
+    });
+    return {
+      access_token: token,
+    };
   }
 }

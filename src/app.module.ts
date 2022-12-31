@@ -8,7 +8,9 @@ import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({}),
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
     AuthModule,
     UserModule,
     BookmarkModule,
@@ -16,5 +18,6 @@ import { ConfigModule } from '@nestjs/config';
   ],
   controllers: [],
   providers: [PrismaService],
+  exports: [ConfigModule.forRoot({})],
 })
 export class AppModule {}
